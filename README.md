@@ -95,4 +95,4 @@ To install and run **Game of Death**, follow these steps:
 
 ### ⚠️ Note
 
-This game is designed for entertainment and educational purposes only. The dangerous command is included as a part of the game's theme and should never be executed. Play responsibly and enjoy the thrill of the **Game of Death**!
+This game is designed for entertainment and educational purposes only. The dangerous command is included as a part of the game's theme. Play responsibly and enjoy the thrill of the **Game of Death**!
