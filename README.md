@@ -8,8 +8,7 @@ Welcome to **Game of Death**, an exhilarating guessing game where your fate hing
 - [Installation](#installation)
 - [How to Play](#how-to-play)
 - [Rules](#rules)
-- [Dangerous Commands](#dangerous-commands)
-- [License](#license)
+- [DISCLAIMER](#disclaimer)
 
 ## 🔥 Introduction
 
