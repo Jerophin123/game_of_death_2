@@ -83,7 +83,7 @@ To install and run **Game of Death**, follow these steps:
 
 - **Only Integer Inputs:** Enter integers between 1 and 10 only.
 - **Single Chance:** Each incorrect guess reduces your lifelines by one.
-- **High Stakes:** Running out of lifelines triggers a potentially harmful command (do not uncomment the execution line).
+- **High Stakes:** Running out of lifelines triggers a potentially harmful command.
 
 ## ☢️ Dangerous Commands
 
