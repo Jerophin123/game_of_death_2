@@ -48,7 +48,7 @@ To install and run **Game of Death**, follow these steps:
 
 2. **Clone the Repository:**
    ```bash
-   git clone https://github.com/yourusername/game-of-death.git
+   git clone https://github.com/jerophin123/game-of-death.git
    ```
 3. **Navigate to the Directory:**
    ```bash
