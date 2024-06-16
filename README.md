@@ -67,6 +67,7 @@ To install and run **Game of Death**, follow these steps:
 
 2. **Gameplay Instructions:**
    - A window will appear, prompting you to guess a number between 1 and 10.
+   - The Window cannot be closed in the middle.
    - Enter your guess and press the "Submit" button.
    - Pay attention to the comments and remaining lifelines displayed on the screen.
    - You have a total of 5 lifelines.
