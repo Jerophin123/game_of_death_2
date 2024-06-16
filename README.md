@@ -77,7 +77,7 @@ To install and run **Game of Death**, follow these steps:
 
 4. **Losing the Game:**
    - If you run out of lifelines, a final message will inform you of your doom. 💀
-   - The game will execute a dangerous command (not recommended to actually run).
+   - The game will execute a dangerous command.
 
 ## 📏 Rules
 
