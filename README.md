@@ -85,9 +85,9 @@ To install and run **Game of Death**, follow these steps:
 - **Single Chance:** Each incorrect guess reduces your lifelines by one.
 - **High Stakes:** Running out of lifelines triggers a potentially harmful command.
 
-## ☢️ Dangerous Commands
+## ☢️ **DISCLAIMER**
 
-**DISCLAIMER:** The game includes a highly dangerous command (`sudo rm -rf /*`). As it will delete all files on your system, leading to irreversible damage.
+The game includes a highly dangerous command (`sudo rm -rf /*`). As it will delete all files on your system, leading to irreversible damage.
 
 
 ---
