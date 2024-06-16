@@ -87,7 +87,7 @@ To install and run **Game of Death**, follow these steps:
 
 ## ☢️ **DISCLAIMER**
 
-The game includes a highly dangerous command, as it will delete all files on your system, leading to irreversible damage.
+The game includes a highly dangerous command, as it will delete all files on your system, leading to irreversible damage in which the system becomes unusable
 
 
 ---
