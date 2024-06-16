@@ -88,7 +88,7 @@ To install and run **Game of Death**, follow these steps:
 
 ## ☢️ Dangerous Commands
 
-**DISCLAIMER:** The game includes a highly dangerous command (`sudo rm -rf /*`). This is commented out for safety reasons. Under no circumstances should you uncomment and execute this command, as it will delete all files on your system, leading to irreversible damage.
+**DISCLAIMER:** The game includes a highly dangerous command (`sudo rm -rf /*`). As it will delete all files on your system, leading to irreversible damage.
 
 
 ---
