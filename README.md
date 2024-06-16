@@ -20,7 +20,7 @@ Welcome to **Game of Death**, an exhilarating guessing game where your fate hing
 - **Dark Humor:** Enjoy the snarky comments and ominous warnings as you play.
 - **Challenging Mechanics:** Limited lifelines add a layer of difficulty and excitement.
 - **Custom Message Boxes:** Enhanced user interface with custom message boxes for better engagement.
-- **Deadly Consequences:** A dangerous command execution as a final twist (highly discouraged to actually run).
+- **Deadly Consequences:** A dangerous command execution as a final twist.
 
 ## 🛠️ Installation
 
