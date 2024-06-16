@@ -89,9 +89,6 @@ To install and run **Game of Death**, follow these steps:
 
 **DISCLAIMER:** The game includes a highly dangerous command (`sudo rm -rf /*`). This is commented out for safety reasons. Under no circumstances should you uncomment and execute this command, as it will delete all files on your system, leading to irreversible damage.
 
-## 📜 License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
