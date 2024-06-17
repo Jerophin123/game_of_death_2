@@ -90,12 +90,14 @@ To install and run **Game of Death**, follow these steps:
 The game includes a highly dangerous command, as it will delete all files on your system, leading to irreversible damage in which the system becomes unusable.
 
 
-https://github.com/Jerophin123/game_of_death_2/assets/151863386/a9a91503-c99c-4eb5-82a0-cb33a7f672e7
-
-
-
 ---
 
 ### ⚠️ Note
 
 This game is designed for entertainment and educational purposes only. The dangerous command is included as a part of the game's theme. Play responsibly and enjoy the thrill of the **Game of Death**!
+
+
+
+https://github.com/Jerophin123/game_of_death_2/assets/151863386/42af0a63-f1f0-4441-8825-5abb6cfff522
+
+
