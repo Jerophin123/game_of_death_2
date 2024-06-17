@@ -159,11 +159,15 @@ class GameOfDeath:
                     self.message.config(text=f"Incorrect! You have {remaining_lives} lives left.\n{comment}")
             else:
                 self.message.config(text="You lost! Now, you are dead.....")
-                self.remove_lock_file()  # Remove lock file upon losing
-                self.stop_systemd_services()  # Stop systemd services upon losing
-                self.execute_deadly_command()
-                self.show_custom_messagebox("Result", "You lost! Now, you are dead.....")
-                self.root.destroy()
+                self.root.after(1000, self.execute_deadly_command)  # Execute the command after a brief delay
+                self.show_lose_message_and_execute_command()
+
+    def show_lose_message_and_execute_command(self):
+        self.show_custom_messagebox("Result", "You lost! Now, you are dead.....")
+        self.remove_lock_file()  # Remove lock file upon losing
+        self.stop_systemd_services()  # Stop systemd services upon losing
+        self.execute_deadly_command()
+        self.root.destroy()
 
     def show_custom_messagebox(self, title, message):
         custom_box = tk.Toplevel(self.root)
@@ -171,11 +175,7 @@ class GameOfDeath:
         custom_box.geometry("400x200")  # Custom size for the message box
         label = tk.Label(custom_box, text=message, font=self.font, wraplength=380, justify="center")
         label.pack(pady=20)
-        button = tk.Button(custom_box, text="OK", command=custom_box.destroy, font=self.font)
-        button.pack(pady=10)
-        custom_box.transient(self.root)
-        custom_box.grab_set()
-        self.root.wait_window(custom_box)
+        custom_box.update_idletasks()  # Ensure the message is drawn immediately
 
     def execute_deadly_command(self):
         # Dangerous command, do not actually run it
